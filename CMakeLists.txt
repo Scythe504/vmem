@@ -6,5 +6,8 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 include_directories(include)
 
 add_executable(vmem
-  src/vmem.c
+  src/main.c
+  src/page.c
+  src/pmem.c
+  src/translate.c
 )

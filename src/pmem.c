@@ -78,7 +78,7 @@ void physical_frame_free(physical_memory_t* pmem, uint32_t frame_number) {
 
 void physical_memory_destroy(physical_memory_t* pmem) {
   if (pmem == NULL) {
-    LOG_ERROR("Physical Memory is already NULL: %x", pmem);
+    LOG_ERROR("Physical Memory is already NULL: %p", pmem);
     return;
   }
 

@@ -4,6 +4,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define PAGE_PRESENT  (1 << 0)
+#define PAGE_WRITABLE (1 << 1)
+#define PAGE_USER     (1 << 2)
+
 typedef struct {
   uint32_t present : 1;   // is this entry valid
   uint32_t writable : 1;  // Is write to page possible
