@@ -10,4 +10,5 @@ add_executable(vmem
   src/page.c
   src/pmem.c
   src/translate.c
+  src/tlb.c
 )

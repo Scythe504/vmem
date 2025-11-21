@@ -4,9 +4,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define PAGE_PRESENT  (1 << 0)
+#define PAGE_PRESENT (1 << 0)
 #define PAGE_WRITABLE (1 << 1)
-#define PAGE_USER     (1 << 2)
+#define PAGE_USER (1 << 2)
+
+// Access Type (to determine if we need to set the dirty bit)
+typedef enum {
+  ACCESS_READ,
+  ACCESS_WRITE
+} access_type_t;
 
 typedef struct {
   uint32_t present : 1;   // is this entry valid

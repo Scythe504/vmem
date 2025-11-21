@@ -63,14 +63,14 @@ page_table_t* page_table_create(page_directory_t* dir, uint32_t dir_index) {
   }
 
   if (dir->tables[dir_index] != NULL) {
-    LOG_ERROR("Dir:%x, Idx:%u, Already have memory allocated", dir, dir_index);
+    LOG_ERROR("Dir:%p, Idx:%u, Already have memory allocated", dir, dir_index);
     return dir->tables[dir_index];
   }
 
   page_table_t* new_table_ptr = calloc(1, sizeof(page_table_t));
 
   if (new_table_ptr == NULL) {
-    LOG_ERROR("Dir:%x, Idx:%u, Failed to allocate memory", dir, dir_index);
+    LOG_ERROR("Dir:%p, Idx:%u, Failed to allocate memory", dir, dir_index);
     return NULL;
   }
 
