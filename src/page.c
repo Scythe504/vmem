@@ -1,4 +1,5 @@
 #include "page.h"
+#include "logger.h"
 
 // Extract page directory index from virtual address
 uint32_t get_page_dir_index(uint32_t vaddr) {
