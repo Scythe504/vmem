@@ -19,8 +19,9 @@ typedef struct {
   uint32_t writable : 1;  // Is write to page possible
   uint32_t usermode : 1;  // User mode accessible
   uint32_t accessed : 1;  // has this been accessed
-  uint32_t dirty : 1;     // has this been written to
-  uint32_t unused : 7;    // reserved bits
+  uint32_t dirty : 1;
+  uint32_t swapped: 1;     // has this been written to
+  uint32_t unused : 6;    // reserved bits
   uint32_t frame : 20;    // physical frame number (top 20 bits of physical address)
 } page_table_entry_t;
 
@@ -28,7 +29,7 @@ typedef struct {
   page_table_entry_t entries[1024];
 } page_table_t;
 
-typedef struct {
+typedef struct page_directory_t {
   page_table_t* tables[1024];  // Array of pointers to page tables
 } page_directory_t;
 

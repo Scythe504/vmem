@@ -1,6 +1,8 @@
 #include "pmem.h"
 
 #include <math.h>
+#include "page.h"
+#include "tlb.h"
 
 #include "logger.h"
 

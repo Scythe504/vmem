@@ -4,6 +4,7 @@
 
 #include "logger.h"
 #include "page.h"
+
 #define TLB_SIZE 32
 
 #define VPN_TAG(vaddr) ((vaddr >> 12) & 0xFFFFF)

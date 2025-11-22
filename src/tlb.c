@@ -1,4 +1,5 @@
 #include "tlb.h"
+#include "page.h"
 
 tlb_t* tlb_create(void) {
   tlb_t* tlb = calloc(1, sizeof(tlb_t));
@@ -43,10 +44,7 @@ void tlb_insert(tlb_t* tlb, uint32_t vaddr, page_table_entry_t* pte) {
   }
   uint32_t tag = VPN_TAG(vaddr);
   uint8_t victim_index = ((tlb->victim_index) % TLB_SIZE);
-  if (pte->present == 0) {
-    LOG_ERROR("Attempting to insert a non-present (swapped) page into TLB.");
-    return;
-  }
+  
   tlb->entries[victim_index].accessed = pte->accessed;
   tlb->entries[victim_index].dirty = pte->dirty;
   tlb->entries[victim_index].pfn_value = pte->frame;
