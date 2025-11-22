@@ -5,8 +5,7 @@ int map_virtual_to_physical(
     physical_memory_t* pmem,
     uint32_t vaddr,
     uint32_t flags,
-    tlb_t* tlb
-  ) {
+    tlb_t* tlb) {
   int32_t page_dir_index = get_page_dir_index(vaddr);
   page_table_t* page_table = dir->tables[page_dir_index];
 
@@ -35,7 +34,7 @@ int map_virtual_to_physical(
 
   page_table_entry->writable = (flags & PAGE_WRITABLE) ? 1 : 0;
   page_table_entry->usermode = (flags & PAGE_USER) ? 1 : 0;
-  page_table_entry->present = 1;
+  page_table_entry->present = (flags & PAGE_PRESENT) ? 1 : 0;
   page_table_entry->frame = frame_number;
   page_table_entry->accessed = 0;  // Not accessed yet
   page_table_entry->dirty = 0;     // Not modified yet
@@ -50,60 +49,70 @@ int32_t translate_address(
     uint32_t vaddr,
     access_type_t type,
     uint8_t curr_privilege,
-    tlb_t* tlb) {
+    tlb_t* tlb,
+    mmu_stats_t* stats) {
   // Extract indices
+  if (stats) {
+    stats->total_translations++;
+  }
+
   uint32_t page_dir_index = get_page_dir_index(vaddr);
   uint32_t page_table_index = get_page_table_index(vaddr);
   uint32_t offset = get_offset(vaddr);
 
-  uint32_t tlb_hit = tlb_lookup(tlb, vaddr);
+  int tlb_hit = tlb_lookup(tlb, vaddr);
 
   uint8_t dirty = 1;
   uint8_t accessed = 1;
   // pte found in tlb
   if (tlb_hit >= 0) {
+    if (stats) stats->tlb_hits++;
     if (curr_privilege == 1 && !tlb->entries[tlb_hit].usermode) {
       printf("PAGE FAULT (TLB Hit): User-mode access attempted on Supervisor-only page.\n");
+      if (stats) stats->page_faults++;
       return -1;
     }
 
     if (type == ACCESS_WRITE && !tlb->entries[tlb_hit].writable) {
       printf("PAGE FAULT (TLB Hit): Write attempted on Read-Only page.\n");
+      if (stats) stats->page_faults++;
       return -1;
     }
 
-    page_table_entry_t *pte = &dir->tables[page_dir_index]->entries[page_table_index];
+    page_table_entry_t* pte = &dir->tables[page_dir_index]->entries[page_table_index];
     if (type == ACCESS_WRITE) {
       tlb_update_flags(tlb, tlb_hit, accessed, dirty);
       pte->dirty = dirty;
     }
     pte->accessed = accessed;
-    
+
     uint32_t paddr = (tlb->entries[tlb_hit].pfn_value << 12) | offset;
     return paddr;
   }
 
+  if (stats) {
+    stats->tlb_misses++;
+    stats->page_table_walks++;
+  }
   page_table_t* page_table = dir->tables[page_dir_index];
 
-  if (page_table == NULL) {
-    printf("PAGE FAULT: Page Directory Entry not present for index 0x%X\n", page_dir_index);
-    return -1;
-  }
-
   page_table_entry_t* page_table_entry = &page_table->entries[page_table_index];
-  if (!page_table_entry->present) {
-    printf("PAGE FAULT: Page Table Entry not present. Needs loading from disk.\n");
+  if (page_table == NULL || !page_table_entry->present) {
+    printf("PAGE FAULT: Page Directory Entry not present %X\n", page_dir_index);
+    if (stats) stats->page_faults++;
     return -1;
   }
 
   // Privelege and Permissions check
   if (type == ACCESS_WRITE && !page_table_entry->writable) {
     printf("PAGE FAULT: Write attempted on Read-Only page.\n");
+    if (stats) stats->page_faults++;
     return -1;  // Error: Write protection fault
   }
 
   if (curr_privilege == 1 && !page_table_entry->usermode) {
     printf("PAGE FAULT: User-mode access attempted on Supervisor-only page.\n");
+    if (stats) stats->page_faults++;
     return -1;
   }
 

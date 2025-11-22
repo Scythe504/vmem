@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#define PAGE_SIZE_BYTES (4ULL << 10)  // 4 KiB = 4096 bytes (size of a page)
 
 typedef struct {
   uint8_t* bitmap;  // Each bit = 1 frame (0=free, 1=used)
