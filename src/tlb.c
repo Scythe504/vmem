@@ -20,21 +20,20 @@ void tlb_destroy(tlb_t* tlb) {
   free(tlb);
 }
 
-int tlb_lookup(tlb_t* tlb, uint32_t vaddr, tlb_entry_t* out_entry) {
+int tlb_lookup(tlb_t* tlb, uint32_t vaddr) {
   if (tlb == NULL) {
     LOG_ERROR("Trying to lookup a NULL tlb");
-    return 0;
+    return -1;
   }
   uint32_t tag = VPN_TAG(vaddr);
 
   for (unsigned i = 0; i < TLB_SIZE; i++) {
     if (tlb->entries[i].vpn_tag == tag && tlb->entries[i].valid == 1) {
-      *out_entry = tlb->entries[i];
-      return 1;
+      return i;
     }
   }
 
-  return 0;
+  return -1;
 }
 
 void tlb_insert(tlb_t* tlb, uint32_t vaddr, page_table_entry_t* pte) {
@@ -82,4 +81,14 @@ void tlb_flush(tlb_t* tlb) {
   for (unsigned i = 0; i < TLB_SIZE; i++) {
     tlb->entries[i].valid = 0;
   }
+}
+
+void tlb_update_flags(tlb_t* tlb, unsigned index, uint8_t accessed, uint8_t dirty) {
+  if (tlb == NULL) {
+    LOG_ERROR("TLB is null, cannot update flags");
+    return;
+  }
+
+  tlb->entries[index].accessed = accessed;
+  tlb->entries[index].dirty = dirty;
 }

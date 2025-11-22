@@ -56,23 +56,30 @@ int32_t translate_address(
   uint32_t page_table_index = get_page_table_index(vaddr);
   uint32_t offset = get_offset(vaddr);
 
-  tlb_entry_t tlb_hit_entry;
-  uint32_t lookup = tlb_lookup(tlb, vaddr, &tlb_hit_entry);
+  uint32_t tlb_hit = tlb_lookup(tlb, vaddr);
 
-  if (lookup) {
-    uint32_t tlb_frame = tlb_hit_entry.pfn_value;
-
-    if (type == ACCESS_WRITE && !tlb_hit_entry.writable) {
-      printf("PAGE FAULT (TLB Hit): Write attempted on Read-Only page.\n");
-      return -1;
-    }
-
-    if (curr_privilege == 1 && !tlb_hit_entry.usermode) {
+  uint8_t dirty = 1;
+  uint8_t accessed = 1;
+  // pte found in tlb
+  if (tlb_hit >= 0) {
+    if (curr_privilege == 1 && !tlb->entries[tlb_hit].usermode) {
       printf("PAGE FAULT (TLB Hit): User-mode access attempted on Supervisor-only page.\n");
       return -1;
     }
 
-    uint32_t paddr = (tlb_frame << 12) | offset;
+    if (type == ACCESS_WRITE && !tlb->entries[tlb_hit].writable) {
+      printf("PAGE FAULT (TLB Hit): Write attempted on Read-Only page.\n");
+      return -1;
+    }
+
+    page_table_entry_t *pte = &dir->tables[page_dir_index]->entries[page_table_index];
+    if (type == ACCESS_WRITE) {
+      tlb_update_flags(tlb, tlb_hit, accessed, dirty);
+      pte->dirty = dirty;
+    }
+    pte->accessed = accessed;
+    
+    uint32_t paddr = (tlb->entries[tlb_hit].pfn_value << 12) | offset;
     return paddr;
   }
 
@@ -103,7 +110,7 @@ int32_t translate_address(
   page_table_entry->accessed = 1;
 
   if (type == ACCESS_WRITE) {
-    page_table_entry->dirty = 1;
+    page_table_entry->dirty = dirty;
   }
 
   uint32_t frame_number = page_table_entry->frame;
